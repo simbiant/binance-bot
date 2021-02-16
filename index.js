@@ -35,10 +35,31 @@ bot.command('/balance', (ctx) => {
   })
 })
 
+// On command `/balance`
+bot.command('/b', (ctx) => {
+  let symbolData = ctx.update.message.text.split(' ')
+  if (symbolData[1] === undefined) {
+    return;
+  }
+  binance.bookTicker({symbol: symbolData[1]}).then((data) => {
+    ctx.reply(
+      `<b>${data.symbol}</b>\n
+      <b>Ask</b> <code>${data.askPrice}</code>\n
+      <b>Bid</b> <code>${data.bidPrice}</code>`,
+      {parse_mode: 'HTML'}
+    )
+  }).catch(x => {
+    // console.log(x)
+    // bot.telegram.sendMessage(secrets.you, JSON.stringify(x))
+  })
+})
+
 // On every event that happens with your binance account
 binanceWS.onUserData(binance, (data) => {
   if (data.eventType === "executionReport") {
-    console.log(data)
+    if (data.orderStatus === 'NEW' || data.orderStatus === 'CANCELED') {
+      return;
+    }
     bot.telegram.sendMessage(
       secrets.you,
       `<i>${data.orderStatus}</i> <b>${data.symbol}</b> ${data.side}@${parseFloat(data.price)} : <code>${parseFloat(data.accumulatedQuantity)}/${parseFloat(data.quantity)}</code>`,
